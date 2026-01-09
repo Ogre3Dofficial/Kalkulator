@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.standard_fonts_metrics.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.ttf.min.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -228,11 +232,19 @@
     }
 
     async function generatePDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-      doc.setFontSize(18);
-      doc.text("Ogre3D – Arajanlat", 14, 20);
+  // Unicode font betöltése
+  const fontUrl = "fonts/Roboto-Regular.ttf";
+  const font = await fetch(fontUrl).then(r => r.arrayBuffer());
+  doc.addFileToVFS("Roboto-Regular.ttf", btoa(String.fromCharCode(...new Uint8Array(font))));
+  doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+  doc.setFont("Roboto");
+
+  doc.setFontSize(18);
+  doc.text("Ogre3D – Árajánlat", 14, 20);
+
 
       doc.setFontSize(12);
       doc.text(`Modell: ${lastData.modelNev}`, 14, 30);
