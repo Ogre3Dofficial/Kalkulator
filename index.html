@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ogre3D Kalkulátor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+    header { text-align: center; margin-bottom: 30px; }
+    header img { width: 150px; }
+    label { display: block; margin-top: 10px; }
+    input, select { width: 100%; padding: 8px; margin-top: 5px; }
+    button { margin-top: 15px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    #eredmeny, #reszletek { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Ogre3D Logo">
+    <h1>Ogre3D Kalkulátor</h1>
+  </header>
+
+  <label>Modell neve:
+    <input type="text" id="modelNev" placeholder="Pl. Kis figurina">
+  </label>
+
+  <label>Tervezési költség (Ft):
+    <input type="number" id="tervezes" value="0">
+  </label>
+
+  <label>Darabszám:
+    <input type="number" id="darab" value="1">
+  </label>
+
+  <label>Anyag súlya (gramm):
+    <input type="number" id="gramm" value="0">
+  </label>
+
+  <label>Áram (Ft/kWh):
+    <input type="number" id="aram" value="50">
+  </label>
+
+  <label>Watt:
+    <input type="number" id="watt" value="50">
+  </label>
+
+  <label>Óradíj (Ft):
+    <input type="number" id="oradij" value="1000">
+  </label>
+
+  <label>Nyomtatási idő (óra):
+    <input type="number" id="idoOra" value="0">
+  </label>
+
+  <label>Kedvezmény (%):
+    <input type="number" id="kedvezmeny" value="0">
+  </label>
+
+  <label>Mód:
+    <select id="modSelect">
+      <option value="egyedi">Egyedi</option>
+      <option value="tobb">Több darab</option>
+    </select>
+  </label>
+
+  <button onclick="szamol()">Számolás</button>
+  <button onclick="generatePDF()">PDF Letöltés</button>
+
+  <div id="eredmeny"></div>
+  <div id="reszletek"></div>
+
+  <script>
+    let lastData = {};
+
+    function szamol() {
+      const tervezes = parseFloat(document.getElementById('tervezes').value) || 0;
+      const modelNev = document.getElementById('modelNev').value || '-';
+      const darab = parseFloat(document.getElementById('darab').value) || 1;
+      const gramm = parseFloat(document.getElementById('gramm').value) || 0;
+      const aram = parseFloat(document.getElementById('aram').value) || 0;
+      const watt = parseFloat(document.getElementById('watt').value) || 0;
+      const oradij = parseFloat(document.getElementById('oradij').value) || 0;
+      const idoOra = parseFloat(document.getElementById('idoOra').value) || 0;
+      const kedvezmeny = parseFloat(document.getElementById('kedvezmeny').value) || 0;
+      const modSelect = document.getElementById('modSelect');
+
+      const anyagkoltseg = gramm * 0.5; // példa ár/gramm
+      const aramkoltseg = (watt / 1000) * idoOra * aram;
+      const geptidij = idoOra * oradij;
+
+      let osszes = anyagkoltseg + aramkoltseg + geptidij;
+      if (modSelect.value === 'egyedi') osszes += tervezes;
+
+      let egysegAr = osszes;
+      let teljesAr = osszes;
+      if (modSelect.value === 'tobb') {
+        egysegAr = osszes / darab;
+        teljesAr = osszes;
+      }
+
+      const kedv = egysegAr * (kedvezmeny / 100);
+      const vegosszeg = Math.round(egysegAr - kedv);
+
+      document.getElementById('eredmeny').innerText = `Egységár: ${vegosszeg.toLocaleString()} Ft`;
+
+      let reszlet = `Anyag: ${anyagkoltseg.toFixed(0)} Ft | Áram: ${aramkoltseg.toFixed(0)} Ft | Gépidő: ${geptidij.toFixed(0)} Ft`;
+      if (modSelect.value === 'tobb') reszlet += ` | Teljes ár: ${Math.round(teljesAr).toLocaleString()} Ft (${darab} db)`;
+      if (modSelect.value === 'egyedi') reszlet += ` | Tervezés: ${tervezes.toFixed(0)} Ft`;
+
+      document.getElementById('reszletek').innerHTML = reszlet;
+
+      lastData = { modelNev, idoOra, gramm, anyagkoltseg, aramkoltseg, geptidij, tervezes, darab, vegosszeg, teljesAr };
+    }
+
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text("Ogre3D – Árajánlat", 14, 20);
+      doc.setFontSize(12);
+      doc.text(`Modell: ${lastData.modelNev}`, 14, 30);
+      doc.text(`Nyomtatási idő: ${lastData.idoOra.toFixed(2)} óra`, 14, 40);
+      doc.text(`Anyagköltség: ${Math.round(lastData.anyagkoltseg)} Ft`, 14, 50);
+      doc.text(`Áramköltség: ${Math.round(lastData.aramkoltseg)} Ft`, 14, 60);
+      doc.text(`Gépidő költség: ${Math.round(lastData.geptidij)} Ft`, 14, 70);
+
+      let y = 80;
+      if (document.getElementById('modSelect').value === 'egyedi') {
+        doc.text(`Tervezési költség: ${Math.round(lastData.tervezes)} Ft`, 14, y);
+        y += 10;
+      }
+      if (document.getElementById('modSelect').value === 'tobb') {
+        doc.text(`Darabszám: ${lastData.darab} db`, 14, y);
+        y += 10;
+        doc.text(`Teljes ár: ${Math.round(lastData.teljesAr)} Ft`, 14, y);
+        y += 10;
+      }
+
+      doc.setFontSize(14);
+      doc.text(`Egységár: ${Math.round(lastData.vegosszeg)} Ft`, 14, y + 10);
+      doc.save("ogre3d_arajanlat.pdf");
+    }
+  </script>
+</body>
+</html>

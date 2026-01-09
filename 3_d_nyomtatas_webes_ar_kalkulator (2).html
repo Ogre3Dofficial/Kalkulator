@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Ogre3D – Profi 3D Nyomtatás Ár Kalkulátor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      padding: 20px;
+      max-width: 560px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #2ecc71;
+      margin-bottom: 5px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      opacity: 0.7;
+      margin-bottom: 20px;
+    }
+    .box {
+      background: #1b1b1b;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 5px;
+      font-size: 16px;
+      background: #2a2a2a;
+      color: #fff;
+    }
+    button {
+      background: #2ecc71;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 20px;
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      font-weight: bold;
+      border: 1px solid #2ecc71;
+    }
+    .small {
+      font-size: 13px;
+      opacity: 0.7;
+      margin-top: 10px;
+      text-align: center;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row > div {
+      flex: 1;
+    }
+    .hidden { display: none; }
+    .logo {
+      display: block;
+      margin: 0 auto 15px;
+      max-width: 160px;
+    }
+  </style>
+</head>
+<body>
+  <img src="logo.png" class="logo" alt="Ogre3D logo">
+  <h1>Ogre3D Ár Kalkulátor</h1>
+  <div class="subtitle">Profi 3D nyomtatás árazás</div>
+
+  <div class="box" id="kalkulator">
+
+    <label>Modell neve (PDF-hez)</label>
+    <input type="text" id="modelNev" placeholder="Pl.: Gamer kontroller tartó">
+
+    <label>Kalkuláció típusa</label>
+    <select id="mod">
+      <option value="normal">Normál</option>
+      <option value="tobb">Több darabos</option>
+      <option value="egyedi">Egyedi</option>
+    </select>
+
+    <div id="darabBox" class="hidden">
+      <label>Darabszám</label>
+      <input type="number" id="darab" value="1">
+    </div>
+
+    <div id="tervezesBox" class="hidden">
+      <label>Tervezési költség (Ft)</label>
+      <input type="number" id="tervezes" value="0">
+    </div>
+
+    <label>Nyomtatási idő</label>
+    <div class="row">
+      <div><input type="number" id="ora" placeholder="Óra" value="1"></div>
+      <div><input type="number" id="perc" placeholder="Perc" value="0"></div>
+    </div>
+
+    <label>Anyagfogyás (gramm)</label>
+    <input type="number" id="gramm" value="80">
+
+    <label>PLA ára (Ft / kg)</label>
+    <input type="number" id="pla" value="6000">
+
+    <div class="row">
+      <div>
+        <label>Fogyasztás (W)</label>
+        <input type="number" id="watt" value="180">
+      </div>
+      <div>
+        <label>Áramdíj (Ft / kWh)</label>
+        <input type="number" id="aram" value="36">
+      </div>
+    </div>
+
+    <label>Óradíj (Ft / óra)</label>
+    <input type="number" id="oradij" value="769">
+
+    <label>Baráti kedvezmény (%)</label>
+    <input type="number" id="kedvezmeny" value="0">
+
+    <button onclick="calc()">Kalkulálás</button>
+
+    <div class="result" id="eredmeny">Végső ár: –</div>
+    <div class="small" id="reszletek"></div>
+
+    <button onclick="generatePDF()">PDF árajánlat generálása</button>
+  </div>
+
+  <div class="small">Ogre3D – Webes árkalkulátor v3.0</div>
+
+  <script>
+    const modSelect = document.getElementById('mod');
+    const darabBox = document.getElementById('darabBox');
+    const tervezesBox = document.getElementById('tervezesBox');
+
+    modSelect.addEventListener('change', () => {
+      darabBox.classList.add('hidden');
+      tervezesBox.classList.add('hidden');
+
+      if (modSelect.value === 'tobb') darabBox.classList.remove('hidden');
+      if (modSelect.value === 'egyedi') tervezesBox.classList.remove('hidden');
+    });
+
+    let lastData = {};
+
+    function calc() {
+      const ora = parseFloat(document.getElementById('ora').value) || 0;
+      const perc = parseFloat(document.getElementById('perc').value) || 0;
+      const gramm = parseFloat(document.getElementById('gramm').value) || 0;
+      const pla = parseFloat(document.getElementById('pla').value) || 0;
+      const watt = parseFloat(document.getElementById('watt').value) || 0;
+      const aram = parseFloat(document.getElementById('aram').value) || 0;
+      const oradij = parseFloat(document.getElementById('oradij').value) || 0;
+      const kedvezmeny = parseFloat(document.getElementById('kedvezmeny').value) || 0;
+      const darab = parseFloat(document.getElementById('darab').value) || 1;
+      const tervezes = parseFloat(document.getElementById('tervezes').value) || 0;
+      const modelNev = document.getElementById('modelNev').value || '-';
+
+      const idoOra = ora + (perc / 60);
+      const anyagkoltseg = gramm * (pla / 1000);
+      const aramkoltseg = (watt / 1000) * idoOra * aram;
+      const geptidij = idoOra * oradij;
+
+      let osszes = anyagkoltseg + aramkoltseg + geptidij;
+
+      if (modSelect.value === 'egyedi') osszes += tervezes;
+
+      let egysegAr = osszes;
+      let teljesAr = osszes;
+
+      if (modSelect.value === 'tobb') {
+        egysegAr = osszes / darab;
+        teljesAr = osszes;
+      }
+
+      const kedv = egysegAr * (kedvezmeny / 100);
+      const vegosszeg = Math.round(egysegAr - kedv);
+
+      document.getElementById('eredmeny').innerText = `Egységár: ${vegosszeg.toLocaleString()} Ft`;
+
+      let reszlet = `Anyag: ${anyagkoltseg.toFixed(0)} Ft | Áram: ${aramkoltseg.toFixed(0)} Ft | Gépidő: ${geptidij.toFixed(0)} Ft`;
+
+      if (modSelect.value === 'tobb') {
+        reszlet += ` | Teljes ár: ${Math.round(teljesAr).toLocaleString()} Ft (${darab} db)`;
+      }
+
+      if (modSelect.value === 'egyedi') {
+        reszlet += ` | Tervezés: ${tervezes.toFixed(0)} Ft`;
+      }
+
+      document.getElementById('reszletek').innerHTML = reszlet;
+
+      lastData = {
+        modelNev,
+        idoOra,
+        gramm,
+        anyagkoltseg,
+        aramkoltseg,
+        geptidij,
+        tervezes,
+        darab,
+        vegosszeg,
+        teljesAr
+      };
+    }
+
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("Ogre3D – Árajánlat", 14, 20);
+
+      doc.setFontSize(12);
+      doc.text(`Modell: ${lastData.modelNev}`, 14, 30);
+      doc.text(`Nyomtatási idő: ${lastData.idoOra.toFixed(2)} óra`, 14, 40);
+      doc.text(`Anyagköltség: ${Math.round(lastData.anyagkoltseg)} Ft`, 14, 50);
+      doc.text(`Áramköltség: ${Math.round(lastData.aramkoltseg)} Ft`, 14, 60);
+      doc.text(`Gépidő költség: ${Math.round(lastData.geptidij)} Ft`, 14, 70);
+
+      let y = 80;
+
+      if (modSelect.value === 'egyedi') {
+        doc.text(`Tervezési költség: ${Math.round(lastData.tervezes)} Ft`, 14, y);
+        y += 10;
+      }
+
+      if (modSelect.value === 'tobb') {
+        doc.text(`Darabszám: ${lastData.darab} db`, 14, y);
+        y += 10;
+        doc.text(`Teljes ár: ${Math.round(lastData.teljesAr)} Ft`, 14, y);
+        y += 10;
+      }
+
+      doc.setFontSize(14);
+      doc.text(`Egységár: ${Math.round(lastData.vegosszeg)} Ft`, 14, y + 10);
+
+      doc.save("ogre3d_arajanlat.pdf");
+    }
+  </script>
+</body>
+</html>
