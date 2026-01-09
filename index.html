@@ -4,12 +4,8 @@
   <meta charset="UTF-8">
   <title>Ogre3D – Profi 3D Nyomtatás Ár Kalkulátor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
- 
-  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -91,7 +87,7 @@
 </head>
 <body>
   <img src="logo.png" class="logo" alt="Ogre3D logo">
-  <h1>2Ogre3D Ár Kalkulátor</h1>
+  <h1>Ogre3D Ár Kalkulátor</h1>
   <div class="subtitle">Profi 3D nyomtatás árazás</div>
 
   <div class="box" id="kalkulator">
@@ -140,7 +136,7 @@
     </div>
 
     <label>Óradíj (Ft / óra)</label>
-    <input type="number" id="oradij" value="800">
+    <input type="number" id="oradij" value="769">
 
     <label>Baráti kedvezmény (%)</label>
     <input type="number" id="kedvezmeny" value="0">
@@ -231,51 +227,39 @@
       };
     }
 
-async function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+    async function generatePDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
-  // 🔤 Betűtípus betöltése (Roboto-Regular.ttf a /fonts mappában)
-  const fontUrl = "fonts/Roboto-Regular.ttf";
-  const font = await fetch(fontUrl).then(r => r.arrayBuffer());
-  const fontBase64 = btoa(String.fromCharCode(...new Uint8Array(font)));
+      doc.setFontSize(18);
+      doc.text("Ogre3D – Arajanlat", 14, 20);
 
-  doc.addFileToVFS("Roboto-Regular.ttf", fontBase64);
-  doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-  doc.setFont("Roboto");
+      doc.setFontSize(12);
+      doc.text(`Modell: ${lastData.modelNev}`, 14, 30);
+      doc.text(`Nyomtatasi ido: ${lastData.idoOra.toFixed(2)} óra`, 14, 40);
+      doc.text(`Anyagkoltseg: ${Math.round(lastData.anyagkoltseg)} Ft`, 14, 50);
+      doc.text(`Aramkoltseg: ${Math.round(lastData.aramkoltseg)} Ft`, 14, 60);
+      doc.text(`Gepido koltseg: ${Math.round(lastData.geptidij)} Ft`, 14, 70);
 
-  // 📄 PDF tartalom
-  doc.setFontSize(18);
-  doc.text("Ogre3D – Árajánlat", 14, 20);
+      let y = 80;
 
-  doc.setFontSize(12);
-  doc.text(`Modell: ${lastData.modelNev}`, 14, 30);
-  doc.text(`Nyomtatási idő: ${lastData.idoOra.toFixed(2)} óra`, 14, 40);
-  doc.text(`Anyagköltség: ${Math.round(lastData.anyagkoltseg)} Ft`, 14, 50);
-  doc.text(`Áramköltség: ${Math.round(lastData.aramkoltseg)} Ft`, 14, 60);
-  doc.text(`Gépidő költség: ${Math.round(lastData.geptidij)} Ft`, 14, 70);
+      if (modSelect.value === 'egyedi') {
+        doc.text(`Tervezesi koltseg: ${Math.round(lastData.tervezes)} Ft`, 14, y);
+        y += 10;
+      }
 
-  let y = 80;
+      if (modSelect.value === 'tobb') {
+        doc.text(`Darabszam: ${lastData.darab} db`, 14, y);
+        y += 10;
+        doc.text(`Teljes ar: ${Math.round(lastData.teljesAr)} Ft`, 14, y);
+        y += 10;
+      }
 
-  if (modSelect.value === 'egyedi') {
-    doc.text(`Tervezési költség: ${Math.round(lastData.tervezes)} Ft`, 14, y);
-    y += 10;
-  }
+      doc.setFontSize(14);
+      doc.text(`Egysegar: ${Math.round(lastData.vegosszeg)} Ft`, 14, y + 10);
 
-  if (modSelect.value === 'tobb') {
-    doc.text(`Darabszám: ${lastData.darab} db`, 14, y);
-    y += 10;
-    doc.text(`Teljes ár: ${Math.round(lastData.teljesAr)} Ft`, 14, y);
-    y += 10;
-  }
-
-  doc.setFontSize(14);
-  doc.text(`Egységár: ${Math.round(lastData.vegosszeg)} Ft`, 14, y + 10);
-
-  // 💾 Mentés
-  doc.save("ogre3d_arajanlat.pdf");
-}
-
+      doc.save("ogre3d_arajanlat.pdf");
+    }
   </script>
 </body>
 </html>
