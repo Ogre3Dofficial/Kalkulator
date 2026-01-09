@@ -234,11 +234,11 @@
   const doc = new jsPDF();
 
   // Unicode font betöltése
-  const fontUrl = "Roboto-Regular.ttf";
+  const fontUrl = "FreeSans.ttf";
   const font = await fetch(fontUrl).then(r => r.arrayBuffer());
-  doc.addFileToVFS("Roboto-Regular.ttf", btoa(String.fromCharCode(...new Uint8Array(font))));
-  doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-  doc.setFont("Roboto");
+  doc.addFileToVFS("FreeSans.ttf", btoa(String.fromCharCode(...new Uint8Array(font))));
+  doc.addFont("FreeSans.ttf", "FreeSans", "normal");
+  doc.setFont("FreeSans");
 
   doc.setFontSize(18);
   doc.text("Ogre3D – Árajánlat", 14, 20);
