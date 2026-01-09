@@ -136,7 +136,7 @@
     </div>
 
     <label>Óradíj (Ft / óra)</label>
-    <input type="number" id="oradij" value="769">
+    <input type="number" id="oradij" value="800">
 
     <label>Baráti kedvezmény (%)</label>
     <input type="number" id="kedvezmeny" value="0">
@@ -232,31 +232,31 @@
       const doc = new jsPDF();
 
       doc.setFontSize(18);
-      doc.text("Ogre3D – Árajánlat", 14, 20);
+      doc.text("Ogre3D – Arajanlat", 14, 20);
 
       doc.setFontSize(12);
       doc.text(`Modell: ${lastData.modelNev}`, 14, 30);
-      doc.text(`Nyomtatási idő: ${lastData.idoOra.toFixed(2)} óra`, 14, 40);
-      doc.text(`Anyagköltség: ${Math.round(lastData.anyagkoltseg)} Ft`, 14, 50);
-      doc.text(`Áramköltség: ${Math.round(lastData.aramkoltseg)} Ft`, 14, 60);
-      doc.text(`Gépidő költség: ${Math.round(lastData.geptidij)} Ft`, 14, 70);
+      doc.text(`Nyomtatasi ido: ${lastData.idoOra.toFixed(2)} óra`, 14, 40);
+      doc.text(`Anyagkoltseg: ${Math.round(lastData.anyagkoltseg)} Ft`, 14, 50);
+      doc.text(`Aramkoltség: ${Math.round(lastData.aramkoltseg)} Ft`, 14, 60);
+      doc.text(`Gepido koltseg: ${Math.round(lastData.geptidij)} Ft`, 14, 70);
 
       let y = 80;
 
       if (modSelect.value === 'egyedi') {
-        doc.text(`Tervezési költség: ${Math.round(lastData.tervezes)} Ft`, 14, y);
+        doc.text(`Tervezesi koltseg: ${Math.round(lastData.tervezes)} Ft`, 14, y);
         y += 10;
       }
 
       if (modSelect.value === 'tobb') {
-        doc.text(`Darabszám: ${lastData.darab} db`, 14, y);
+        doc.text(`Darabszam: ${lastData.darab} db`, 14, y);
         y += 10;
-        doc.text(`Teljes ár: ${Math.round(lastData.teljesAr)} Ft`, 14, y);
+        doc.text(`Teljes ar: ${Math.round(lastData.teljesAr)} Ft`, 14, y);
         y += 10;
       }
 
       doc.setFontSize(14);
-      doc.text(`Egységár: ${Math.round(lastData.vegosszeg)} Ft`, 14, y + 10);
+      doc.text(`Egysegar: ${Math.round(lastData.vegosszeg)} Ft`, 14, y + 10);
 
       doc.save("ogre3d_arajanlat.pdf");
     }
